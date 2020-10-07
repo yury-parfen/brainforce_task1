@@ -5,6 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Pricelist</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+            function funcBefore () {
+                $("#information").text ("Выполнение запроса...");
+            }
+            function funcSuccess (data) {
+                $("#information").html (data);
+            }
+
+            $(document).ready (function () {
+                $("#show").bind("click", function () {
+                    $.ajax ({
+                        url: "filter.php", 
+                        type: "POST",
+                        data: ({selectprice: $("#selectprice").val(), minprice: $("#minprice").val(), maxprice: $("#maxprice").val(), selectquantity: $("#selectquantity").val(), quantity: $("#quantity").val()}),
+                        dataType: "html",
+                        beforeSend: funcBefore,
+                        success: funcSuccess
+                    });
+                });
+            });
+    </script>
 
     <?php
         $servername = "localhost";
@@ -73,79 +95,98 @@
 </head>
 <body>
 
-    <table style="margin-top: 15px" border="1">
-        <caption style="font-size: 20px">Pricelist</caption>
-        <tr >
-            <th >ID</th>
-            <th>Наименование товара</th>
-            <th>Стоимость, руб</th>
-            <th>Стоимость опт, руб</th>
-            <th>Наличие на складе 1, шт</th>
-            <th>Наличие на складе 2, шт</th>
-            <th>Страна производства</th>
-            <th>Примечания</th>
-        </tr>
-    
-        <?php
+    <div style="margin-top: 15px">
+        <p style="font-size: 20px">
+            Показать товары, у которых 
+            <select name="selectprice" id="selectprice">
+                <option value="retail">Розничная цена</option>
+                <option value="wholesale">Оптовая цена</option>
+            </select> от 
+            <input type="text" name="minprice" id="minprice" placeholder="1000"> до
+            <input type="text" name="maxprice" id="maxprice" placeholder="5000"> рублей и на складе
+            <select name="selectquantity" id="selectquantity">
+                <option value="more">Более</option>
+                <option value="less">Менее</option>
+            </select>
+            <input type="text" name="quantity" id="quantity" placeholder="20">  штук.
+            <input type="button" id="show" value="ПОКАЗАТЬ ТОВАРЫ"> 
+        </p>
+    </div>
 
-            $sqlMAX = mysqli_query($conn, "SELECT MAX(`$price1`) FROM `pricelist` WHERE `$price1` IS NOT NULL;");
-            $max = mysqli_fetch_array($sqlMAX);
+    <div style="margin-top: 15px" id="information">
+        <table style="margin-top: 15px" border="1">
+            <caption style="font-size: 20px">Pricelist</caption>
+            <tr >
+                <th >ID</th>
+                <th>Наименование товара</th>
+                <th>Стоимость, руб</th>
+                <th>Стоимость опт, руб</th>
+                <th>Наличие на складе 1, шт</th>
+                <th>Наличие на складе 2, шт</th>
+                <th>Страна производства</th>
+                <th>Примечания</th>
+            </tr>
+        
+            <?php
 
-            $sqlMIN = mysqli_query($conn, "SELECT MIN(`$price2`) FROM `pricelist` WHERE `$price2` IS NOT NULL;");
-            $min = mysqli_fetch_array($sqlMIN);
-           
+                $sqlMAX = mysqli_query($conn, "SELECT MAX(`$price1`) FROM `pricelist` WHERE `$price1` IS NOT NULL;");
+                $max = mysqli_fetch_array($sqlMAX);
 
-            $sqlPrint = mysqli_query($conn, "SELECT * FROM `pricelist`;");
-            while ($row = mysqli_fetch_array($sqlPrint)) {
-                echo "<tr>";
-                echo "<td>".$row["$id"]."</td>";
-                echo "<td>".$row["$name"]."</td>";
-                if ($row["$price1"] == $max[0]) {
-                    echo "<td style='background-color: red';>".$row["$price1"]."</td>";
-                } else {
-                    echo "<td>".$row["$price1"]."</td>";
+                $sqlMIN = mysqli_query($conn, "SELECT MIN(`$price2`) FROM `pricelist` WHERE `$price2` IS NOT NULL;");
+                $min = mysqli_fetch_array($sqlMIN);
+            
+
+                $sqlPrint = mysqli_query($conn, "SELECT * FROM `pricelist`;");
+                while ($row = mysqli_fetch_array($sqlPrint)) {
+                    echo "<tr>";
+                    echo "<td>".$row["$id"]."</td>";
+                    echo "<td>".$row["$name"]."</td>";
+                    if ($row["$price1"] == $max[0]) {
+                        echo "<td style='background-color: red';>".$row["$price1"]."</td>";
+                    } else {
+                        echo "<td>".$row["$price1"]."</td>";
+                    }
+                    if ($row["$price2"] == $min[0]) {
+                        echo "<td style='background-color: green';>".$row["$price2"]."</td>";
+                    } else {
+                        echo "<td>".$row["$price2"]."</td>";
+                    }
+                    echo "<td>".$row["$stock1"]."</td>";
+                    echo "<td>".$row["$stock2"]."</td>";
+                    echo "<td>".$row["$country"]."</td>";
+                    if ($row["$stock1"] < 20 || $row["$stock2"] < 20) {
+                        echo "<td>Осталось мало!! Срочно докупите!!!</td>";
+                    } else {
+                        echo "<td>".$row["$notes"]."</td>";
+                    }
+                    echo "</tr>";
                 }
-                if ($row["$price2"] == $min[0]) {
-                    echo "<td style='background-color: green';>".$row["$price2"]."</td>";
-                } else {
-                    echo "<td>".$row["$price2"]."</td>";
+            ?>
+
+        </table>
+
+        <?php   
+                function functionSum ($stock) {
+                    global $conn;
+                    $sqlSum = mysqli_query($conn, "SELECT SUM(`$stock`) FROM `pricelist` WHERE `$stock` IS NOT NULL;");
+                    $sum = mysqli_fetch_array($sqlSum);
+                    echo $sum[0];
                 }
-                echo "<td>".$row["$stock1"]."</td>";
-                echo "<td>".$row["$stock2"]."</td>";
-                echo "<td>".$row["$country"]."</td>";
-                if ($row["$stock1"] < 20 || $row["$stock2"] < 20) {
-                    echo "<td>Осталось мало!! Срочно докупите!!!</td>";
-                } else {
-                    echo "<td>".$row["$notes"]."</td>";
+        ?>    
+        <p>Общее количество товаров на Складе 1: <?php functionSum($stock1); ?> шт.</p>
+        <p>Общее количество товаров на Складе 2: <?php functionSum($stock2); ?> шт.</p>
+
+        <?php   
+                function functionAvg ($price) {
+                    global $conn;
+                    $sqlAvg = mysqli_query($conn, "SELECT AVG(`$price`) FROM `pricelist` WHERE `$price` IS NOT NULL;");
+                    $avg = mysqli_fetch_array($sqlAvg);
+                    echo round($avg[0], 2);
                 }
-                echo "</tr>";
-            }
-        ?>
+        ?>  
 
-    </table>
-
-    <?php   
-            function functionSum ($stock) {
-                global $conn;
-                $sqlSum = mysqli_query($conn, "SELECT SUM(`$stock`) FROM `pricelist` WHERE `$stock` IS NOT NULL;");
-                $sum = mysqli_fetch_array($sqlSum);
-                echo $sum[0];
-            }
-    ?>    
-    <p>Общее количество товаров на Складе 1: <?php functionSum($stock1); ?> шт.</p>
-    <p>Общее количество товаров на Складе 2: <?php functionSum($stock2); ?> шт.</p>
-
-    <?php   
-            function functionAvg ($price) {
-                global $conn;
-                $sqlAvg = mysqli_query($conn, "SELECT AVG(`$price`) FROM `pricelist` WHERE `$price` IS NOT NULL;");
-                $avg = mysqli_fetch_array($sqlAvg);
-                echo round($avg[0], 2);
-            }
-    ?>  
-
-    <p>Средняя стоимость розничной цены товара: <?php functionAvg($price1); ?> руб.</p>
-    <p>Средняя стоимость оптовой цены товара: <?php functionAvg($price2); ?> руб.</p>
-   
+        <p>Средняя стоимость розничной цены товара: <?php functionAvg($price1); ?> руб.</p>
+        <p>Средняя стоимость оптовой цены товара: <?php functionAvg($price2); ?> руб.</p>
+    </div>
 </body>
 </html>
