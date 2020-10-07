@@ -19,6 +19,7 @@
             echo "Соединение установлено <br>\n";
         }
 
+        $id = 'id';
         $name = 'Наименование товара';
         $price1 = 'Стоимость, руб';
         $price2 = 'Стоимость опт, руб';
@@ -30,7 +31,7 @@
 
         $queryTable = "CREATE Table `pricelist`
             (
-                id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                `$id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
                 `$name` VARCHAR(55) NOT NULL UNIQUE KEY,
                 `$price1` VARCHAR(55),
                 `$price2` VARCHAR(55),
@@ -74,8 +75,8 @@
 
     <table style="margin-top: 15px" border="1">
         <caption style="font-size: 20px">Pricelist</caption>
-        <tr>
-            <th>ID</th>
+        <tr >
+            <th >ID</th>
             <th>Наименование товара</th>
             <th>Стоимость, руб</th>
             <th>Стоимость опт, руб</th>
@@ -86,25 +87,65 @@
         </tr>
     
         <?php
-            $printSql = mysqli_query($conn, "SELECT * FROM `pricelist`;");
-            while ($row = mysqli_fetch_array($printSql)) {
+
+            $sqlMAX = mysqli_query($conn, "SELECT MAX(`$price1`) FROM `pricelist` WHERE `$price1` IS NOT NULL;");
+            $max = mysqli_fetch_array($sqlMAX);
+
+            $sqlMIN = mysqli_query($conn, "SELECT MIN(`$price2`) FROM `pricelist` WHERE `$price2` IS NOT NULL;");
+            $min = mysqli_fetch_array($sqlMIN);
+           
+
+            $sqlPrint = mysqli_query($conn, "SELECT * FROM `pricelist`;");
+            while ($row = mysqli_fetch_array($sqlPrint)) {
                 echo "<tr>";
-                echo "<td>{$row['id']}</td>";
-                echo "<td>{$row["$name"]}</td>";
-                echo "<td>{$row["$price1"]}</td>";
-                echo "<td>{$row["$price2"]}</td>";
-                echo "<td>{$row["$stock1"]}</td>";
-                echo "<td>{$row["$stock2"]}</td>";
-                echo "<td>{$row["$country"]}</td>";
-                echo "<td>{$row["$notes"]}</td>";
+                echo "<td>".$row["$id"]."</td>";
+                echo "<td>".$row["$name"]."</td>";
+                if ($row["$price1"] == $max[0]) {
+                    echo "<td style='background-color: red';>".$row["$price1"]."</td>";
+                } else {
+                    echo "<td>".$row["$price1"]."</td>";
+                }
+                if ($row["$price2"] == $min[0]) {
+                    echo "<td style='background-color: green';>".$row["$price2"]."</td>";
+                } else {
+                    echo "<td>".$row["$price2"]."</td>";
+                }
+                echo "<td>".$row["$stock1"]."</td>";
+                echo "<td>".$row["$stock2"]."</td>";
+                echo "<td>".$row["$country"]."</td>";
+                if ($row["$stock1"] < 20 || $row["$stock2"] < 20) {
+                    echo "<td>Осталось мало!! Срочно докупите!!!</td>";
+                } else {
+                    echo "<td>".$row["$notes"]."</td>";
+                }
                 echo "</tr>";
             }
-
-            function ()
         ?>
 
     </table>
 
-    
+    <?php   
+            function functionSum ($stock) {
+                global $conn;
+                $sqlSum = mysqli_query($conn, "SELECT SUM(`$stock`) FROM `pricelist` WHERE `$stock` IS NOT NULL;");
+                $sum = mysqli_fetch_array($sqlSum);
+                echo $sum[0];
+            }
+    ?>    
+    <p>Общее количество товаров на Складе 1: <?php functionSum($stock1); ?> шт.</p>
+    <p>Общее количество товаров на Складе 2: <?php functionSum($stock2); ?> шт.</p>
+
+    <?php   
+            function functionAvg ($price) {
+                global $conn;
+                $sqlAvg = mysqli_query($conn, "SELECT AVG(`$price`) FROM `pricelist` WHERE `$price` IS NOT NULL;");
+                $avg = mysqli_fetch_array($sqlAvg);
+                echo round($avg[0], 2);
+            }
+    ?>  
+
+    <p>Средняя стоимость розничной цены товара: <?php functionAvg($price1); ?> руб.</p>
+    <p>Средняя стоимость оптовой цены товара: <?php functionAvg($price2); ?> руб.</p>
+   
 </body>
 </html>
