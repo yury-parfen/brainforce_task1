@@ -50,7 +50,7 @@
         $country = 'Страна производства';
         $notes = 'Примечания';
 
-
+        // -------------- создание таблицы
         $queryTable = "CREATE Table `pricelist`
             (
                 `$id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -66,8 +66,9 @@
             echo "Таблица `pricelist` создана успешно <br>";
           } else {
              echo "Ошибка создания таблицы: " . mysqli_error($conn) . "<br>";
-          }
+        }
 
+          // -------------- импорт таблицы из файла csv
           $queryImport = "LOAD DATA LOCAL INFILE '/Applications/MAMP/htdocs/brainforce_task1/pricelist.csv' 
           INTO TABLE `pricelist` 
           COLUMNS TERMINATED BY ','
@@ -85,6 +86,7 @@
                echo "Ошибка импорта файла: " . mysqli_error($conn);
             }
               
+        // -------------- убрал текстовые значения из столбцов с ценами, заменил в ценаз запятые на точки, поменял тип столбцов с ценами
         $price1Null = mysqli_query($conn, "UPDATE `pricelist` SET `$price1` = NULL WHERE `$price1` = 'Стоимость';");
         $price2Null = mysqli_query($conn, "UPDATE `pricelist` SET `$price2` = NULL WHERE `$price2` = '\#ЗНАЧЕН!';");
         $replaceDot = mysqli_query($conn, "UPDATE `pricelist` SET `$price1` = REPLACE(`$price1`, ',', '.');");
@@ -129,6 +131,7 @@
         
             <?php
 
+                // -------------- находим максимальное и минимальное значение в столбцах
                 $sqlMAX = mysqli_query($conn, "SELECT MAX(`$price1`) FROM `pricelist` WHERE `$price1` IS NOT NULL;");
                 $max = mysqli_fetch_array($sqlMAX);
 
